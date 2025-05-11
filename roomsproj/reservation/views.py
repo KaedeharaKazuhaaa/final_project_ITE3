@@ -18,6 +18,18 @@ def parse_json(request):
     except json.JSONDecodeError:
         return None
 
+def handle_uploaded_file(file, max_size_mb=2):
+    """Validate uploaded file size and type"""
+    if file.size > max_size_mb * 1024 * 1024:
+        return False, f"File size exceeds {max_size_mb}MB limit"
+
+    allowed_extensions = ['jpg', 'jpeg', 'png', 'webp']
+    ext = file.name.split('.')[-1].lower()
+    if ext not in allowed_extensions:
+        return False, f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"
+    
+    return True, None
+
 def token_required(view_func):
     """Decorator to require valid JWT token for protected views"""
     def wrapper(request, *args, **kwargs):
@@ -38,9 +50,23 @@ def token_required(view_func):
 @rate_limit(requests=5, period=60)  # Limit to 5 registration attempts per minute
 def register(request):
     if request.method == 'POST':
-        data = parse_json(request)
-        if not data:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        # Check if the request has files
+        if request.FILES:
+            # Handle multipart form data
+            data = request.POST.dict()
+            
+            # Process photo if present in the request
+            photo = request.FILES.get('photo')
+            if photo:
+                is_valid, error_msg = handle_uploaded_file(photo)
+                if not is_valid:
+                    return JsonResponse({'error': error_msg}, status=400)
+        else:
+            # Handle JSON data
+            data = parse_json(request)
+            if not data:
+                return JsonResponse({'error': 'Invalid JSON or form data'}, status=400)
+            photo = None
         
         try:
             # Validate required fields
@@ -77,17 +103,23 @@ def register(request):
                     phone_number=data.get('phone_number', ''),
                     position=data['position'],
                     admin_id=data['admin_id'],
-                    is_super_admin=data.get('is_super_admin', False)
+                    is_super_admin=data.get('is_super_admin', 'False') == 'True'
                 )
             else:
-                profile = UserProfile.objects.create(
-                    user=user,
-                    department=data['department'],
-                    phone_number=data.get('phone_number', ''),
-                    role=data['role'],
-                    student_id=data.get('student_id') if data['role'] == 'student' else None,
-                    faculty_id=data.get('faculty_id') if data['role'] == 'faculty' else None
-                )
+                profile_data = {
+                    'user': user,
+                    'department': data['department'],
+                    'phone_number': data.get('phone_number', ''),
+                    'role': data['role'],
+                    'student_id': data.get('student_id') if data['role'] == 'student' else None,
+                    'faculty_id': data.get('faculty_id') if data['role'] == 'faculty' else None
+                }
+                
+                # Add photo if it exists
+                if photo:
+                    profile_data['photo'] = photo
+                
+                profile = UserProfile.objects.create(**profile_data)
             
             return JsonResponse({
                 'message': 'User registered successfully',
@@ -96,7 +128,8 @@ def register(request):
                     'username': user.username,
                     'email': user.email,
                     'role': 'admin' if isinstance(profile, Admin) else profile.role,
-                    'department': profile.department
+                    'department': profile.department,
+                    'photo': request.build_absolute_uri(profile.photo.url) if hasattr(profile, 'photo') and profile.photo else None
                 }
             }, status=201)
             

@@ -3,6 +3,23 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+import os
+
+def validate_image_size(value):
+    """Validate that the file size is not greater than 2MB"""
+    max_size = 2 * 1024 * 1024  # 2MB in bytes
+    if value.size > max_size:
+        raise ValidationError('Image file size cannot exceed 2MB.')
+
+def user_photo_path(instance, filename):
+    """Generate a unique path for user photos"""
+    # Get the file extension
+    ext = filename.split('.')[-1]
+    # Create a new filename
+    new_filename = f"{instance.user.username}_{int(timezone.now().timestamp())}.{ext}"
+    # Return the upload path
+    return os.path.join('user_photos', new_filename)
 
 class Room(models.Model):
     FACILITY_TYPES = [
@@ -91,6 +108,16 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     student_id = models.CharField(max_length=20, blank=True, null=True)
     faculty_id = models.CharField(max_length=20, blank=True, null=True)
+    photo = models.ImageField(
+        upload_to=user_photo_path,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            validate_image_size
+        ],
+        blank=True,
+        null=True,
+        help_text="User profile photo. Only JPG, JPEG, PNG, and WebP files less than 2MB are allowed."
+    )
     
     def __str__(self):
         return f"{self.user.username}'s Profile"

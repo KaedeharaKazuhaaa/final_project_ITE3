@@ -9,6 +9,7 @@ A meeting room reservation system that allows users to book rooms, manage reserv
 - Reservation management (create, update, view, delete)
 - User profiles with departmental information
 - Reservation approval workflow
+- User profile photo upload (supports JPEG, PNG, WebP, with 2MB size limit)
 
 ## Installation
 
@@ -28,7 +29,9 @@ A meeting room reservation system that allows users to book rooms, manage reserv
 
 #### Register (User/Admin)
 - **POST** `/api/auth/register/`
-- **Body (User):**
+- **Method**: POST
+- **Content-Type**: `application/json` or `multipart/form-data` (for photo uploads)
+- **Body (User - JSON):**
   ```json
   {
     "username": "faculty1",
@@ -42,6 +45,18 @@ A meeting room reservation system that allows users to book rooms, manage reserv
     "faculty_id": "FAC001"
   }
   ```
+- **Body (User with Photo - multipart/form-data):**
+  - `username`: "student1"
+  - `email`: "student1@example.com"
+  - `password`: "student123"
+  - `role`: "student"
+  - `department`: "Computer Science"
+  - `phone_number`: "1234567890"
+  - `first_name`: "Jane" 
+  - `last_name`: "Doe"
+  - `student_id`: "STU001"
+  - `photo`: [image file - JPEG, PNG, WebP only, max 2MB]
+  
 - **Body (Admin):**
   ```json
   {
@@ -56,6 +71,32 @@ A meeting room reservation system that allows users to book rooms, manage reserv
     "admin_id": "ADM001",
     "position": "Facility Manager",
     "is_super_admin": true
+  }
+  ```
+- **Response (Success - 201):**
+  ```json
+  {
+    "message": "User registered successfully",
+    "user": {
+      "id": 1,
+      "username": "student1",
+      "email": "student1@example.com",
+      "role": "student",
+      "department": "Computer Science",
+      "photo": "http://example.com/media/user_photos/student1_1623412345.jpg"
+    }
+  }
+  ```
+- **Response (Error - 400):**
+  ```json
+  {
+    "error": "File size exceeds 2MB limit"
+  }
+  ```
+  Or
+  ```json
+  {
+    "error": "File type not allowed. Allowed types: jpg, jpeg, png, webp"
   }
   ```
 
