@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Room, UserProfile, Reservation, Admin
 from .utils import generate_token, verify_token, get_token_from_request
+from .rate_limiter import rate_limit
 import json
 
 # Utility to parse JSON
@@ -34,6 +35,7 @@ def token_required(view_func):
 
 # Authentication Views
 @csrf_exempt
+@rate_limit(requests=5, period=60)  # Limit to 5 registration attempts per minute
 def register(request):
     if request.method == 'POST':
         data = parse_json(request)
@@ -104,6 +106,7 @@ def register(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @csrf_exempt
+@rate_limit(requests=10, period=60)  # Limit to 10 login attempts per minute
 def login_view(request):
     if request.method == 'POST':
         data = parse_json(request)
@@ -211,6 +214,7 @@ def get_user_info(request):
 
 # Room Views
 @csrf_exempt
+@rate_limit(requests=20, period=60)  # Limit to 20 requests per minute
 def room_list(request):
     if request.method == 'GET':
         rooms = list(Room.objects.values())
@@ -448,6 +452,7 @@ def admin_detail(request, admin_id):
 
 # Reservation Views
 @csrf_exempt
+@rate_limit(requests=15, period=60)  # Limit to 15 requests per minute
 def reservation_list(request):
     if request.method == 'GET':
         reservations = Reservation.objects.all()

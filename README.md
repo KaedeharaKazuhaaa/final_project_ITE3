@@ -189,6 +189,28 @@ All endpoints may return the following error responses:
   }
   ```
 
+- **429 Too Many Requests**
+  ```json
+  {
+    "error": "Too many requests",
+    "message": "Request limit of X per Y seconds exceeded. Please try again later."
+  }
+  ```
+  This response will include a `Retry-After` header indicating the number of seconds to wait before making another request.
+
+## Rate Limiting
+
+The API implements rate limiting to prevent abuse and ensure stability:
+
+| Endpoint | Rate Limit |
+|----------|------------|
+| User Registration | 5 requests per minute |
+| Login | 10 requests per minute |
+| Room List | 20 requests per minute |
+| Reservations | 15 requests per minute |
+
+When a rate limit is exceeded, the API will return a 429 Too Many Requests response with a Retry-After header.
+
 ## Authentication
 
 The API uses JWT (JSON Web Token) for authentication. To access protected endpoints:
