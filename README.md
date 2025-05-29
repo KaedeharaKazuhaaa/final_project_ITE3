@@ -475,3 +475,7 @@ All endpoints may return the following error responses:
     "error": "Resource not found"
 }
 ``` 
+SECRET_KEY=8lwyf3w9p$-ia5zrs^k*w*chn%fd*_6=cdk^k@rh%m9(358ge(
+ALLOWED_HOSTS=.onrender.com
+DEBUG=False
+DATABASE_URL=postgresql://rooms_postresql_user:ya0Nz1aibwfPzoRGJvurASuB2rJYXiXK@dpg-d0rv6nk9c44c73ck5ge0-a.oregon-postgres.render.com/rooms_postresql

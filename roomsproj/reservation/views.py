@@ -194,13 +194,13 @@ def user_login(request):
                 return JsonResponse({
                     'message': 'Login successful',
                     'token': generate_token(user),
-                    'user': {
-                        'id': user.id,
-                        'username': user.username,
-                        'email': user.email,
-                        'role': user_profile.role,
-                        'department': user_profile.department
-                    }
+                    # 'user': {
+                    #     'id': user.id,
+                    #     'username': user.username,
+                    #     'email': user.email,
+                    #     'role': user_profile.role,
+                    #     'department': user_profile.department
+                    # }
                 })
             except UserProfile.DoesNotExist:
                 return JsonResponse({'error': 'Invalid user account'}, status=401)
@@ -233,14 +233,14 @@ def admin_login(request):
                 return JsonResponse({
                     'message': 'Login successful',
                     'token': generate_token(user),
-                    'admin': {
-                        'id': user.id,
-                        'username': user.username,
-                        'email': user.email,
-                        'department': admin_profile.department,
-                        'position': admin_profile.position,
-                        'is_super_admin': admin_profile.is_super_admin
-                    }
+                    # 'admin': {
+                    #     'id': user.id,
+                    #     'username': user.username,
+                    #     'email': user.email,
+                    #     'department': admin_profile.department,
+                    #     'position': admin_profile.position,
+                    #     'is_super_admin': admin_profile.is_super_admin
+                    # }
                 })
             except Admin.DoesNotExist:
                 return JsonResponse({'error': 'Invalid admin account'}, status=401)
