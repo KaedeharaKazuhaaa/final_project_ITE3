@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.environ.get("DEBUG", "False").lower() == "True"
 # DEBUG = Truex,
 # ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS").split(" "),
-ALLOWED_HOSTS = ['ite3-api-service.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['ite3-final-project.onrender.com', 'localhost', '127.0.0.1']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
