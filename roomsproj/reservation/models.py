@@ -96,6 +96,77 @@ class Admin(models.Model):
             return True
         return False
 
+    def get_all_users(self, **filters):
+        """
+        Get all registered users based on admin's permission level and optional filters
+        
+        Args:
+            **filters: Optional filters like department, role, etc.
+            
+        Returns:
+            QuerySet of User objects
+        """
+        users = User.objects.filter(is_active=True)
+        
+        # Super admin can see all users
+        if self.is_super_admin:
+            pass
+        # Department admin can only see users in their department
+        elif self.admin_level == 'department':
+            users = users.filter(profile__department=self.department)
+        # Facility admin can see users who have made reservations for their facilities
+        elif self.admin_level == 'facility':
+            facility_users = Reservation.objects.filter(
+                room__in=self.managed_facilities.all()
+            ).values_list('user', flat=True).distinct()
+            users = users.filter(id__in=facility_users)
+            
+        # Apply additional filters if provided
+        if 'department' in filters:
+            users = users.filter(profile__department=filters['department'])
+        if 'role' in filters:
+            users = users.filter(profile__role=filters['role'])
+        if 'search' in filters:
+            search_term = filters['search']
+            users = users.filter(
+                models.Q(username__icontains=search_term) |
+                models.Q(first_name__icontains=search_term) |
+                models.Q(last_name__icontains=search_term) |
+                models.Q(email__icontains=search_term)
+            )
+            
+        return users.distinct()
+
+    def get_user_details(self, user_id):
+        """
+        Get detailed information about a specific user
+        
+        Args:
+            user_id: ID of the user to get details for
+            
+        Returns:
+            User object with related profile or None if not authorized
+        """
+        try:
+            user = User.objects.select_related('profile').get(id=user_id)
+            
+            # Check if admin has permission to view this user
+            if self.is_super_admin:
+                return user
+            elif self.admin_level == 'department' and user.profile.department == self.department:
+                return user
+            elif self.admin_level == 'facility':
+                # Check if user has any reservations in admin's facilities
+                has_reservation = Reservation.objects.filter(
+                    user=user,
+                    room__in=self.managed_facilities.all()
+                ).exists()
+                if has_reservation:
+                    return user
+            return None
+        except User.DoesNotExist:
+            return None
+
 class UserProfile(models.Model):
     ROLE_CHOICES = [
         ('faculty', 'Faculty Member'),
